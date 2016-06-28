@@ -15,7 +15,7 @@ using namespace cv;
 using namespace cv::ximgproc;
 using namespace std;
 
-Mat getContour(const cv::Mat& test_)
+Mat getBitMap(const cv::Mat& test_)
 {
 	Mat image = test_;
 
@@ -29,41 +29,88 @@ Mat getContour(const cv::Mat& test_)
 	binRed.copyTo(temp);
 	temp += binBlue;
 
-	cv::imshow("dst", dst);
+	//Было нужно на этапе проссмотра
+	//cv::imshow("dst", dst);
 	cv::imshow("lal", temp);
-	cv::imshow("lalB", binBlue);
-	cv::imshow("lalR", binRed);
-	//imshow(window_name, mask);
+	//cv::imshow("lalB", binBlue);
+	//cv::imshow("lalR", binRed);
+	
 	cv::waitKey();
 	// удаляем окна
-	cvDestroyAllWindows();
-	//vector<vector<Point> > contours;
-	//Mat cont = Mat::zeros(temp.size(), CV_8UC1);
 
-	//findContours(temp, contours, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE);
-	//drawContours(cont, contours, -1, 255, 2, 8);
+	cvDestroyAllWindows();
+
 
 
 	return temp;
 }
 
+double rigthCompare(Mat& larg_, Mat& rarg_)
+{
+	int temp = 0;
+	for (int i = 0; i < larg_.size().height; i++)
+		for (int j = 0; j < larg_.size().width; j++)
+		{
+			if(larg_.at<unsigned char>(i,j) == rarg_.at<unsigned char>(i,j))
+			{
+				temp++;
+			}
+		}
+	return (double)temp * 100 / (larg_.size().width*larg_.size().height);
+}
+
+double errCompare(Mat& larg_, Mat& rarg_)
+{
+	int temp = 0;
+	for (int i = 0; i < larg_.size().height; i++)
+		for (int j = 0; j < larg_.size().width; j++)
+		{
+			if (larg_.at<unsigned char>(i, j) != rarg_.at<unsigned char>(i, j))
+			{
+				temp++;
+			}
+		}
+	return (double)temp * 100 / (rarg_.size().width*rarg_.size().height);
+}
+
+double misCompare(Mat& larg_, Mat& rarg_)
+{
+	int temp = 0;
+	for (int i = 0; i < larg_.size().height; i++)
+		for (int j = 0; j < larg_.size().width; j++)
+		{
+			if ((larg_.at<unsigned char>(i,j) > 0) && (larg_.at<unsigned char>(i, j) != rarg_.at<unsigned char>(i, j)))
+			{
+				temp++;
+			}
+		}
+	return (double)temp * 100 / (rarg_.size().width*rarg_.size().height);
+}
 
 int main(int argc, char* argv[])
 {
 	// имя картинки задаётся первым параметром
 	char* filename = argc == 2 ? argv[1] : "00002.ppm";
-
+	char* testname = "00002.jpg";
+	Mat test_img = imread(testname);
 	Mat input_image = imread(filename);
 
 	printf("[i] image: %s\n", filename);
 	assert(!input_image.empty());
 	imshow("asd", input_image);
-	Mat mask = getContour(input_image);
+	Mat mask = getBitMap(input_image);
+	Mat test_mask = getBitMap(test_img);
 
+	double right = rigthCompare(mask, test_mask);
+	double err = errCompare(mask, test_mask);
+	double mis = misCompare(mask, test_mask);
+	
+	cout << "After comparassion " << endl << "Right detection = " << right << "%" << endl << "Wrong detection = " << err << "%" << endl << "Misdetection = " << mis << "%" << endl;
+
+	//Наложение 
 	input_image.setTo(Scalar(255, 0, 255), mask);
 
 	cv::imshow("res", input_image);
-	cout << " pos = " << 14.9 << "%" << "; neg = " << 27.3 << "%" << ";" << " med = " << 57.8 << "%" << endl;
 	//imshow(window_name, mask);
 	cv::waitKey();
 	// удаляем окна
